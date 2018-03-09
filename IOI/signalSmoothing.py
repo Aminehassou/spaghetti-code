@@ -21,6 +21,5 @@ while not smallerThan(mesures, maxDiff):
         mesures_next.append((mesures[x+1] + mesures[x-1]) / 2) 
         
     mesures_next.append(mesures[-1])
-    #print(mesures_next)
     mesures = mesures_next
 print(counter)
