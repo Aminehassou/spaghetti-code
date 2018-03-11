@@ -16,7 +16,7 @@ while not smallerThan(mesures, maxDiff):
     counter += 1
     mesures_next = [mesures[0]]
 
-    for x in range(1, len(mesures)-1):
+    for x in range(1, len(mesures)-1):  
 
         mesures_next.append((mesures[x+1] + mesures[x-1]) / 2) 
         
