@@ -1,0 +1,9 @@
+body {
+    color: yellow;
+}
+strong {
+    color: red;
+}
+p strong {
+    color: green;
+}
