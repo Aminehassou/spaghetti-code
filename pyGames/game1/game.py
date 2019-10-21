@@ -25,6 +25,7 @@ class Character(object):
         self.y = y
         self.character_height = character_height
         self.character_width = character_width
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
         self.vel = 4
         self.is_jump = False
         self.is_left = False
@@ -51,16 +52,19 @@ class Character(object):
             else:
                 win.blit(walk_left[0], (self.x, self.y))
             win.blit(char, (self.x, self.y))
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 class Enemy(object):
     walk_right = [pygame.image.load('R1E.png'), pygame.image.load('R2E.png'), pygame.image.load('R3E.png'), pygame.image.load('R4E.png'), pygame.image.load('R5E.png'), pygame.image.load('R6E.png'), pygame.image.load('R7E.png'), pygame.image.load('R8E.png'), pygame.image.load('R9E.png'), pygame.image.load('R10E.png'), pygame.image.load('R11E.png')]
     walk_left = [pygame.image.load('L1E.png'), pygame.image.load('L2E.png'), pygame.image.load('L3E.png'), pygame.image.load('L4E.png'), pygame.image.load('L5E.png'), pygame.image.load('L6E.png'), pygame.image.load('L7E.png'), pygame.image.load('L8E.png'), pygame.image.load('L9E.png'), pygame.image.load('L10E.png'), pygame.image.load('L11E.png')]
     
-    def __init__(self, x, y, enemy_width, enemy_height, x_end):
+    def __init__(self, x, y, width, height, x_end):
         self.x = x
         self.y = y
-        self.enemy_width = enemy_width
-        self.enemy_height = enemy_height
+        self.width = width
+        self.height = height
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
         self.x_end = x_end
         self.path = [self.x, self.x_end]
         self.walk_count = 0
@@ -76,7 +80,9 @@ class Enemy(object):
         else:
             win.blit(self.walk_left[self.walk_count//self.frame_per_image], (self.x, self.y))
             self.walk_count += 1
-    
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
     def move(self):
         if self.vel > 0:
             if self.x + self.vel < self.path[1]:
@@ -90,6 +96,10 @@ class Enemy(object):
             else:
                 self.vel *= -1
                 self.walk_count = 0
+    
+    def hit(self):
+        print("Goblin is hit")
+        pass
 
 class Projectile(object):
     def __init__(self, x, y, radius, color, is_facing):
@@ -108,19 +118,30 @@ win = pygame.display.set_mode((window_width, window_height))
 pygame.display.set_caption("First Game")
 
 character = Character(x = 200, y = 410, character_width = 64, character_height = 64)
-enemy = Enemy(x = 100, y = 410, enemy_width = 64, enemy_height = 64, x_end = 450)
+enemy = Enemy(x = 100, y = 415, width = 64, height = 64, x_end = 450)
 bullets = []
+shootLoop = 0
 run = True
 
 # Main Game Loop
 while run:
     clock.tick(60)
 
+    if shootLoop > 0:
+        shootLoop += 1
+    if shootLoop > 5:
+        shootLoop = 0
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
 
     for bullet in bullets:
+        if bullet.y - bullet.radius < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y + bullet.radius > enemy.hitbox[1]:
+            if bullet.x - bullet.radius < enemy.hitbox[0] + enemy.hitbox[2] and bullet.x + bullet.radius > enemy.hitbox[0]:
+                enemy.hit() 
+                bullets.pop(bullets.index(bullet))
+
         if bullet.x < 500 and bullet.x > 0:
             bullet.x += bullet.vel
         else:
@@ -128,7 +149,7 @@ while run:
 
     keys = pygame.key.get_pressed()
     
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] and shootLoop == 0:
         if character.is_left:
             is_facing = -1
         
@@ -141,6 +162,7 @@ while run:
         if len(bullets) < 5:
             projectile = Projectile(round(character.x + character.character_width //2), round(character.y + character.character_height//2), 6, (0,0,0), is_facing)
             bullets.append(projectile)
+        shootLoop = 1
 
     if keys[pygame.K_LEFT] and character.x > 0: 
         character.x -= character.vel
