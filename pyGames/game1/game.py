@@ -2,7 +2,9 @@ import pygame
 pygame.init()
 
 def redraw_game_window():
+    text = font.render("Score: {}".format(score), 1, (0, 0, 0))
     win.blit(bg, (0,0))
+    win.blit(text, (330, 10))
     character.draw(win)
     enemy.draw(win)
     for bullet in bullets:
@@ -16,6 +18,8 @@ char = pygame.image.load('standing.png')
 
 window_width = 500
 window_height = 500
+
+score = 0
 
 clock = pygame.time.Clock()
 
@@ -53,7 +57,7 @@ class Character(object):
                 win.blit(walk_left[0], (self.x, self.y))
             win.blit(char, (self.x, self.y))
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+        #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 class Enemy(object):
     walk_right = [pygame.image.load('R1E.png'), pygame.image.load('R2E.png'), pygame.image.load('R3E.png'), pygame.image.load('R4E.png'), pygame.image.load('R5E.png'), pygame.image.load('R6E.png'), pygame.image.load('R7E.png'), pygame.image.load('R8E.png'), pygame.image.load('R9E.png'), pygame.image.load('R10E.png'), pygame.image.load('R11E.png')]
@@ -70,18 +74,24 @@ class Enemy(object):
         self.walk_count = 0
         self.vel = 3
         self.frame_per_image = 5
+        self.health = 10
+        self.visible = True
              
     def draw(self, win):
         self.move()
-        self.walk_count = (self.walk_count) % (self.frame_per_image * 11)
-        if self.vel > 0:
-            win.blit(self.walk_right[self.walk_count//self.frame_per_image], (self.x, self.y))
-            self.walk_count += 1
-        else:
-            win.blit(self.walk_left[self.walk_count//self.frame_per_image], (self.x, self.y))
-            self.walk_count += 1
-        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+        if self.visible:
+            self.walk_count = (self.walk_count) % (self.frame_per_image * 11)
+            if self.vel > 0:
+                win.blit(self.walk_right[self.walk_count//self.frame_per_image], (self.x, self.y))
+                self.walk_count += 1
+            else:
+                win.blit(self.walk_left[self.walk_count//self.frame_per_image], (self.x, self.y))
+                self.walk_count += 1
+            health_bar_modifier = 50 - (5 * (10 - self.health))
+            pygame.draw.rect(win, (255, 0, 0), (self.hitbox[0] - 10, self.hitbox[1] - 20, 50, 10))
+            pygame.draw.rect(win, (0, 120, 0), (self.hitbox[0] - 10, self.hitbox[1] - 20, health_bar_modifier, 10))
+            self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+        #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
     def move(self):
         if self.vel > 0:
@@ -98,8 +108,12 @@ class Enemy(object):
                 self.walk_count = 0
     
     def hit(self):
+        if self.health > 0:
+            self.health -= 1
+        else:
+            self.visible = False
         print("Goblin is hit")
-        pass
+        
 
 class Projectile(object):
     def __init__(self, x, y, radius, color, is_facing):
@@ -119,11 +133,15 @@ pygame.display.set_caption("First Game")
 
 character = Character(x = 200, y = 410, character_width = 64, character_height = 64)
 enemy = Enemy(x = 100, y = 415, width = 64, height = 64, x_end = 450)
+
 bullets = []
+
 shootLoop = 0
+
 run = True
 
 # Main Game Loop
+font = pygame.font.SysFont('arial', 30, True)
 while run:
     clock.tick(60)
 
@@ -139,7 +157,8 @@ while run:
     for bullet in bullets:
         if bullet.y - bullet.radius < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y + bullet.radius > enemy.hitbox[1]:
             if bullet.x - bullet.radius < enemy.hitbox[0] + enemy.hitbox[2] and bullet.x + bullet.radius > enemy.hitbox[0]:
-                enemy.hit() 
+                enemy.hit()
+                score += 1 
                 bullets.pop(bullets.index(bullet))
 
         if bullet.x < 500 and bullet.x > 0:
