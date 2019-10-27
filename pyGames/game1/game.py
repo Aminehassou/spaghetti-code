@@ -16,10 +16,15 @@ walk_left = [pygame.image.load('L1.png'), pygame.image.load('L2.png'), pygame.im
 bg = pygame.image.load('bg.jpg')
 char = pygame.image.load('standing.png')
 
-window_width = 500
-window_height = 500
+window_width = 825
+window_height = 480
 
 score = 0
+
+bullet_sound = pygame.mixer.Sound('bullet.wav')
+hit_sound = pygame.mixer.Sound('hit.wav')
+music = pygame.mixer.music.load('music.mp3')
+pygame.mixer.music.play(-1)
 
 clock = pygame.time.Clock()
 
@@ -58,6 +63,22 @@ class Character(object):
             win.blit(char, (self.x, self.y))
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
         #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+
+    def hit(self):
+        self.is_jump = False
+        self.jump_count = 10
+        self.x = 60
+        self.y = 410
+        self.walk_count = 0
+        font_hit = pygame.font.SysFont('arial', 100)
+        text = font_hit.render('-5', 1, (255, 0, 0))
+        center_text_width = (window_width / 2) - (text.get_width() / 2)
+        win.blit(text, (center_text_width, 200))
+        pygame.display.update()
+        i = 0
+        while i < 100:
+            pygame.time.delay(10)
+            i += 1
 
 class Enemy(object):
     walk_right = [pygame.image.load('R1E.png'), pygame.image.load('R2E.png'), pygame.image.load('R3E.png'), pygame.image.load('R4E.png'), pygame.image.load('R5E.png'), pygame.image.load('R6E.png'), pygame.image.load('R7E.png'), pygame.image.load('R8E.png'), pygame.image.load('R9E.png'), pygame.image.load('R10E.png'), pygame.image.load('R11E.png')]
@@ -108,7 +129,7 @@ class Enemy(object):
                 self.walk_count = 0
     
     def hit(self):
-        if self.health > 0:
+        if self.health > 1:
             self.health -= 1
         else:
             self.visible = False
@@ -153,15 +174,22 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+    if enemy.visible:
+        if character.hitbox[1] < enemy.hitbox[1] + enemy.hitbox[3] and character.hitbox[1] + character.hitbox[3] > enemy.hitbox[1]:
+            if character.hitbox[0] + character.hitbox[2] > enemy.hitbox[0] and character.hitbox[0] < enemy.hitbox[0] + enemy.hitbox[2]:
+                character.hit()
+                score -= 5
 
     for bullet in bullets:
-        if bullet.y - bullet.radius < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y + bullet.radius > enemy.hitbox[1]:
-            if bullet.x - bullet.radius < enemy.hitbox[0] + enemy.hitbox[2] and bullet.x + bullet.radius > enemy.hitbox[0]:
-                enemy.hit()
-                score += 1 
-                bullets.pop(bullets.index(bullet))
+        if enemy.visible:
+            if bullet.y - bullet.radius < enemy.hitbox[1] + enemy.hitbox[3] and bullet.y + bullet.radius > enemy.hitbox[1]:
+                if bullet.x - bullet.radius < enemy.hitbox[0] + enemy.hitbox[2] and bullet.x + bullet.radius > enemy.hitbox[0]:
+                    enemy.hit()
+                    hit_sound.play()
+                    score += 1 
+                    bullets.pop(bullets.index(bullet))
 
-        if bullet.x < 500 and bullet.x > 0:
+        if bullet.x < window_width and bullet.x > 0:
             bullet.x += bullet.vel
         else:
             bullets.pop(bullets.index(bullet))
@@ -169,6 +197,8 @@ while run:
     keys = pygame.key.get_pressed()
     
     if keys[pygame.K_SPACE] and shootLoop == 0:
+        bullet_sound.play()
+
         if character.is_left:
             is_facing = -1
         
@@ -189,7 +219,7 @@ while run:
         character.is_right = False
         character.is_standing = False
 
-    elif keys[pygame.K_RIGHT] and character.x < 500 - character.character_width:  
+    elif keys[pygame.K_RIGHT] and character.x < window_width - character.character_width:  
         character.x += character.vel
         character.is_right = True
         character.is_left = False
